@@ -1,0 +1,32 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: programas.crds.example.com
+spec:
+  group: crds.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                envVarValue:
+                  type: string
+                  description: "The value to set for MY_ENV_VAR environment variable"
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+  scope: Namespaced
+  names:
+    plural: programas
+    singular: programa
+    kind: ProgramA
+    shortNames:
+    - pa
