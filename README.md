@@ -123,6 +123,61 @@ kubectl delete programas --all
 kubectl delete crd programas.crds.example.com
 ```
 
+## Deploying to AWS EKS
+
+When deploying this to AWS EKS (or any production Kubernetes cluster), you'll need proper RBAC permissions and deployment manifests.
+
+### Required Permissions
+
+#### ProgramB needs:
+- **Custom Resources**: `create`, `get`, `list`, `watch` on `programas`
+- **Minimal permissions** since it only creates custom resources
+
+#### Controller needs:
+- **Custom Resources**: `get`, `list`, `watch`, `update`, `patch` on `programas`
+- **Custom Resource Status**: `get`, `update`, `patch` on `programas/status`
+- **Deployments**: `get`, `list`, `watch`, `create`, `update`, `patch`, `delete`
+- **Pods**: `get`, `list`, `watch` (for monitoring)
+- **Events**: `create`, `update`, `patch` (for logging events)
+
+### RBAC Configuration Files
+
+- **[programB-rbac.yaml](./programB-rbac.yaml)** - Service account and permissions for programB
+- **[controller-rbac.yaml](./controller-rbac.yaml)** - Service account and permissions for controller
+- **[programB-deployment.yaml](./programB-deployment.yaml)** - Deployment manifest for programB
+- **[controller-deployment.yaml](./controller-deployment.yaml)** - Deployment manifest for controller
+- **[eks-setup.md](./eks-setup.md)** - AWS EKS specific setup notes
+
+### Deployment Order for EKS
+
+```bash
+# 1. Apply CRD
+kubectl apply -f programA-crd.yaml
+
+# 2. Apply RBAC configurations
+kubectl apply -f programB-rbac.yaml
+kubectl apply -f controller-rbac.yaml
+
+# 3. Build and push images to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+docker build -t programb:latest -f Dockerfile.programB .
+docker tag programb:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/programb:latest
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/programb:latest
+
+# 4. Deploy applications
+kubectl apply -f programB-deployment.yaml
+kubectl apply -f controller-deployment.yaml
+```
+
+### Key EKS Considerations
+
+1. **Service Accounts**: Both programs need dedicated service accounts
+2. **RBAC**: Role-based access control is mandatory
+3. **ECR**: You'll need to push images to Amazon ECR
+4. **IAM**: Might need IAM roles for service accounts (IRSA) if interacting with AWS services
+5. **Security**: EKS enforces pod security standards
+6. **Networking**: Consider network policies for pod-to-pod communication
+
 ## Next Steps
 
 This POC demonstrates the basic pattern for Kubernetes operators. To extend this:

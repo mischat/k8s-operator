@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: programb-service-account
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: programb-role
+rules:
+- apiGroups: ["crds.example.com"]
+  resources: ["programas"]
+  verbs: ["create", "get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: programb-rolebinding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: programb-service-account
+  namespace: default
+roleRef:
+  kind: Role
+  name: programb-role
+  apiGroup: rbac.authorization.k8s.io

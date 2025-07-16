@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: programb-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: programb
+  template:
+    metadata:
+      labels:
+        app: programb
+    spec:
+      serviceAccountName: programb-service-account
+      containers:
+      - name: programb
+        image: programb:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KUBECONFIG
+          value: ""  # Use in-cluster config
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: programb-service
+  namespace: default
+spec:
+  selector:
+    app: programb
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
